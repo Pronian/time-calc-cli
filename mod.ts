@@ -222,7 +222,7 @@ function evaluatePostfix(tokens: Token[]): CalcResult {
 					const ms = durationToMs(operand);
 					stack.push(Temporal.Duration.from({ milliseconds: -ms }));
 				} else {
-					throw new Error("Cannot apply unary minus to PlainDateTime");
+					throw new Error(`Cannot apply unary minus to ${operand.constructor.name} (${operand})`);
 				}
 			} else {
 				const b = stack.pop();
@@ -242,7 +242,9 @@ function evaluatePostfix(tokens: Token[]): CalcResult {
 						} else if (typeof a === "number" && typeof b === "number") {
 							stack.push(a + b);
 						} else {
-							throw new Error("Invalid operands for +");
+							throw new Error(
+								`Cannot add ${a.constructor.name} (${a}) and ${b.constructor.name} (${b})`,
+							);
 						}
 						break;
 					case "-":
@@ -255,7 +257,9 @@ function evaluatePostfix(tokens: Token[]): CalcResult {
 						} else if (typeof a === "number" && typeof b === "number") {
 							stack.push(a - b);
 						} else {
-							throw new Error("Invalid operands for -");
+							throw new Error(
+								`Cannot subtract ${a.constructor.name} (${a}) and ${b.constructor.name} (${b})`,
+							);
 						}
 						break;
 					case "*":
@@ -268,7 +272,9 @@ function evaluatePostfix(tokens: Token[]): CalcResult {
 						} else if (typeof a === "number" && typeof b === "number") {
 							stack.push(a * b);
 						} else {
-							throw new Error("Invalid operands for *");
+							throw new Error(
+								`Cannot multiply ${a.constructor.name} (${a}) and ${b.constructor.name} (${b})`,
+							);
 						}
 						break;
 					case "/":
@@ -286,7 +292,9 @@ function evaluatePostfix(tokens: Token[]): CalcResult {
 							if (b === 0) throw new Error("Division by zero");
 							stack.push(a / b);
 						} else {
-							throw new Error("Invalid operands for /");
+							throw new Error(
+								`Cannot divide ${a.constructor.name} (${a}) by ${b.constructor.name} (${b})`,
+							);
 						}
 						break;
 					default:
@@ -304,9 +312,17 @@ function evaluatePostfix(tokens: Token[]): CalcResult {
 }
 
 function calculate(expression: string): CalcResult {
-	const tokens = tokenize(expression);
-	const postfix = infixToPostfix(tokens);
-	return evaluatePostfix(postfix);
+	try {
+		const tokens = tokenize(expression);
+		const postfix = infixToPostfix(tokens);
+		return evaluatePostfix(postfix);
+	} catch (error) {
+		if (error instanceof Error) {
+			logFatal(error.message);
+		}
+	}
+
+	return 0;
 }
 
 function localizeResult(result: CalcResult): string {
